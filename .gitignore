@@ -1,0 +1,21 @@
+# Local data and credentials must never be committed.
+.env
+.env.*
+!.env.example
+tasks.json*
+worldlib-pdf/
+*.bak
+*.tmp
+*.log
+*.pdf
+*cookies*
+*.sqlite*
+*.pem
+*.key
+
+# Build artifacts: publish reviewed packages separately only after authorization.
+*.xpi
+*.zip
+dist/
+node_modules/
+.DS_Store

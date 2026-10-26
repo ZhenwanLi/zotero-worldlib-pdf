@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "世图 PDF 助手",
+  "version": "0.1.7",
+  "description": "通过世图提交 DOI、等待结果并将 PDF 添加到原文献。",
+  "author": "Worldlib PDF Helper contributors",
+  "icons": {
+    "32": "chrome/content/icons/plugin-32.png",
+    "48": "chrome/content/icons/plugin-48.png",
+    "96": "chrome/content/icons/plugin-96.png",
+    "128": "chrome/content/icons/plugin-128.png"
+  },
+  "applications": {
+    "zotero": {
+      "id": "worldlib-pdf@local.zotero",
+      "update_url": "https://updates.invalid/worldlib-pdf/updates.json",
+      "strict_min_version": "9.0",
+      "strict_max_version": "10.*"
+    }
+  }
+}

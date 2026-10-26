@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml" title="世图 PDF 助手" windowtype="worldlib-pdf:tasks"
+        width="1050" height="640" persist="screenX screenY width height sizemode">
+  <html:link rel="stylesheet" href="chrome://worldlibpdf/content/tasks.css"/>
+  <html:main>
+    <html:header><html:h1>世图 PDF 助手</html:h1><html:p>选中文献后右键获取 PDF，完成后自动添加到原文献下方。</html:p></html:header>
+    <html:section class="toolbar" aria-label="任务操作">
+      <html:button id="login">扫码登录</html:button>
+      <html:button id="refresh">刷新结果</html:button>
+      <html:button id="website">打开网站</html:button>
+      <html:button id="resume" hidden="hidden">恢复新提交</html:button>
+    </html:section>
+    <html:p id="session" role="status"/>
+    <html:p id="notice" role="status"/>
+    <html:div class="table-wrap">
+      <html:table>
+        <html:thead><html:tr><html:th><html:input id="select-all" type="checkbox" aria-label="选择全部任务"/></html:th><html:th>文献 / DOI</html:th><html:th>状态</html:th><html:th>说明</html:th></html:tr></html:thead>
+        <html:tbody id="tasks"/>
+      </html:table>
+      <html:p id="empty">还没有任务。在 Zotero 中选中文献，右键选择“通过世图获取 PDF”。</html:p>
+    </html:div>
+    <html:footer>
+      <html:div class="toolbar">
+        <html:button id="retry">重试查询 / 下载</html:button>
+        <html:button id="stop">停止所选任务</html:button>
+        <html:button id="resubmit">重新提交所选需求…</html:button>
+        <html:button id="delete">删除所选记录</html:button>
+        <html:button id="clear-completed">清空已完成记录</html:button>
+      </html:div>
+      <html:p>删除仅清理本地列表，保留 PDF 与任务去重信息；正在处理的任务请先停止。自动完成需要 Zotero 保持运行，重启后继续查询。停止不会撤回网站需求。</html:p>
+    </html:footer>
+  </html:main>
+  <script src="chrome://worldlibpdf/content/tasks.js"/>
+</window>
