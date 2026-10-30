@@ -85,10 +85,14 @@ var WorldlibCore = (() => {
   }
   function matchRecord(job, records) {
     const matching = records.filter(r => r && r.dois.length === 1 && r.dois[0] === job.doi);
-    if (job.remoteIDs.length) {
-      const pinned = matching.filter(r => job.remoteIDs.includes(r.id) || job.remoteIDs.includes(r.messageID));
+    // The site answers a repeated demand with a zero/empty record, which used to be
+    // stored as the remote id. Such an id matches nothing and only made the job
+    // report "another task owns this DOI" forever, so treat it as absent.
+    const pinnedIDs = (job.remoteIDs || []).filter(id => /^[1-9]\d*$/.test(String(id)));
+    if (pinnedIDs.length) {
+      const pinned = matching.filter(r => pinnedIDs.includes(r.id) || pinnedIDs.includes(r.messageID));
       if (pinned.length) return chooseRecord(pinned);
-      if (records.some(r => r && job.remoteIDs.includes(r.id) && r.dois.length && !r.dois.includes(job.doi))) {
+      if (records.some(r => r && pinnedIDs.includes(r.id) && r.dois.length && !r.dois.includes(job.doi))) {
         throw new TaskError("mismatch", "网站任务标识与 DOI 不一致，请到网站核对。");
       }
       if (matching.length) throw new TaskError("ambiguous", "历史中的同 DOI 结果属于其他任务，请到网站核对。");
@@ -285,6 +289,14 @@ var WorldlibCore = (() => {
       }
     }
     async process(job, session, history) {
+      // A submission that came back without a usable task id (the site answers
+      // 已经查询过该文献 with a zero or empty record) must not keep hiding the
+      // existing result, or the job waits forever without ever downloading.
+      const validRemote = (job.remoteIDs || []).filter(id => /^[1-9]\d*$/.test(String(id)));
+      if (validRemote.length !== (job.remoteIDs || []).length) {
+        job.remoteIDs = validRemote;
+        job.ignoredRemoteIDs = [];
+      }
       if (job.resubmitRequested) {
         job.ignoredRemoteIDs = [...new Set([...(job.ignoredRemoteIDs || []),
           ...history.records.filter(r => r.dois.includes(job.doi)).flatMap(r => [r.id, r.messageID]).filter(Boolean)])];
@@ -314,10 +326,17 @@ var WorldlibCore = (() => {
           if (this.closed || !active(job)) return;
           job.uncertain = false; job.state = "waiting";
           const candidate = matchRecord(job, records);
-          if (candidate) {
+          if (candidate && /^[1-9]\d*$/.test(String(candidate.id || ""))) {
             record = candidate;
-            if (candidate.id) job.remoteIDs = [candidate.id];
+            job.remoteIDs = [String(candidate.id)];
             job.ignoredRemoteIDs = (job.ignoredRemoteIDs || []).filter(id => ![candidate.id, candidate.messageID].includes(id));
+          } else {
+            // No usable task id came back, so no new demand was created. Drop the
+            // suppression added for a resubmission and reconcile against the
+            // records that are already there instead of waiting forever.
+            job.remoteIDs = [];
+            job.ignoredRemoteIDs = [];
+            record = matchRecord(job, history.records);
           }
           await this.save();
         } catch (error) {

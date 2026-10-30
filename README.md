@@ -2,7 +2,7 @@
 
 在 Zotero 中通过 DOI 查询世图文献求助结果，下载 PDF，并自动添加到原文献下方。
 
-**当前版本：0.1.9 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
+**当前版本：0.1.10 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
 
 > 需要可正常使用文献咨询功能的世图账号。本插件不提供账号、订阅或网站权限，不保证每篇文献都能获取。当前版本已通过本地自动化测试，尚未完成修复后的 Zotero 实机端到端验证。
 
@@ -16,7 +16,7 @@
 
 ## 安装
 
-1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.9.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
+1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.10.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
 2. 在 Zotero 中打开 **工具 → 插件**，点击齿轮菜单，选择 **从文件安装插件**。
 3. 选择下载的 XPI；如 Zotero 提示重启，按提示操作。
 
@@ -76,8 +76,8 @@ python3 scripts/build.py
 脚本读取 `manifest.json` 中的版本号，仅打包 `bootstrap.js`、`manifest.json`、`src/` 和 `chrome/`，生成：
 
 ```text
-dist/worldlib-pdf-0.1.9.xpi
-dist/worldlib-pdf-0.1.9.xpi.sha256
+dist/worldlib-pdf-0.1.10.xpi
+dist/worldlib-pdf-0.1.10.xpi.sha256
 ```
 
 产物不会包含测试文件、Git 历史、任务数据或本机路径。相同输入生成相同字节的安装包；输出文件已存在时拒绝覆盖。

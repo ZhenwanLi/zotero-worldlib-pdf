@@ -307,3 +307,36 @@ test('a raw http address is still rejected before the landing page is resolved',
   const { client } = setup([row({ url: 'http://203.0.113.10:8123/UPLOAD/a.PDF' })]);
   assert.deepEqual((await client.results(session))[0].links, []);
 });
+
+test('a submission answered with a zero task id does not hide the existing result', async () => {
+  const { client } = setup([row()]);
+  const job = newJob({ state: 'waiting', remoteIDs: ['0'], ignoredRemoteIDs: ['123'], submittedAt: 1 });
+  let submitted = 0, attached = 0;
+  const engine = new Core.Engine({ store: { save: async () => {} },
+    site: { submit: async () => { submitted++; return []; } },
+    library: { attach: async () => { attached++; return { attachmentKey: 'TESTPDF' }; } } });
+  engine.data.jobs = [job];
+  await engine.process(job, session, await client.history(session, [job]));
+  assert.equal(submitted, 0);
+  assert.equal(attached, 1);
+  assert.equal(job.state, 'done');
+  assert.deepEqual(job.remoteIDs, ['123']);
+  assert.deepEqual(job.ignoredRemoteIDs, []);
+});
+
+test('a fresh submission answered without a task id falls back to the existing record', async () => {
+  const { client } = setup([row()]);
+  const job = newJob({ state: 'queued', remoteIDs: [], ignoredRemoteIDs: ['123'], submittedAt: 0 });
+  let submitted = 0, attached = 0;
+  const engine = new Core.Engine({ store: { save: async () => {} },
+    site: { prepare: async () => {}, submit: async () => { submitted++; return [{ id: '0', messageID: '',
+      dois: [row().title], status: '待应助', links: [], failed: false, complete: false, text: row().title }]; } },
+    library: { attach: async () => { attached++; return { attachmentKey: 'TESTPDF' }; } } });
+  engine.data.jobs = [job];
+  await engine.process(job, session, await client.history(session, [job]));
+  assert.equal(submitted, 1);
+  assert.equal(attached, 1);
+  assert.equal(job.state, 'done');
+  assert.deepEqual(job.remoteIDs, ['123']);
+  assert.deepEqual(job.ignoredRemoteIDs, []);
+});
