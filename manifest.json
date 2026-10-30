@@ -13,6 +13,7 @@
   "applications": {
     "zotero": {
       "id": "worldlib-pdf@local.zotero",
+      "update_url": "https://updates.invalid/worldlib-pdf/updates.json",
       "strict_min_version": "9.0",
       "strict_max_version": "10.*"
     }

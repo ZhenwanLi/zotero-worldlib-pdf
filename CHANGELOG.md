@@ -19,6 +19,11 @@
 
 - 新增空列表、账号无法确认、空列表下核对历史、Cookie 缺失时回退、身份到期与未开通等用例；`node --test tests/site.test.js` 共 28 项通过。
 
+### 打包与兼容
+
+- 恢复 `manifest.json` 中 `applications.zotero.update_url`。Zotero 10 的清单校验要求该字段存在（`Extension.sys.mjs` 中缺失即 `applications.zotero.update_url not provided`），0.1.7 把它当作「无效的自动更新地址」删掉后，仓库构建的安装包在 Zotero 10 上会以「无法安装插件，可能无法与该版本的 Zotero 兼容」失败。
+- 该地址指向不存在的 `updates.invalid` 主机，只用于满足校验并明确表示不提供自动更新；如后续要做自动更新，应改为真实可访问的更新清单地址。
+
 ## 0.1.7
 
 本仓库基于当前修复后的源码重新打包，版本号保持 0.1.7，不是此前的旧安装包。
