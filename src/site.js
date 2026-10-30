@@ -30,16 +30,22 @@ var WorldlibSite = (() => {
       if (!identity || !identity.unionid) throw new Core.TaskError("login", "请先扫码登录，成功后会自动继续处理。");
       return { identity: { ...identity }, account: await this.fingerprint(identity.unionid) };
     }
-    async confirmLogin() {
-      const session = await this.session();
+    async profile(session) {
       const params = new URLSearchParams({ action: "user_getwxid", openid: session.identity.unionid });
       const body = await this.request("GET", BASE + "/tools/submit_ajax.ashx?" + params);
       let profile;
       try { profile = typeof body === "string" ? JSON.parse(body.replace(/^\uFEFF/, "")) : body; }
       catch (_) { throw new Core.TaskError("login", "网站尚未确认登录，请在扫码窗口完成登录。"); }
       // This profile endpoint uses status 1 for a valid account (unlike demand APIs).
-      if (!profile || Number(profile.status) !== 1 || !/^[1-9]\d*$/.test(String(profile.userid || ""))
-        || profile.usertype === undefined || !Number.isFinite(Number(profile.usertype))) {
+      if (!profile || Number(profile.status) !== 1 || !/^[1-9]\d*$/.test(String(profile.userid || ""))) {
+        throw new Core.TaskError("login", "网站尚未确认登录，请在扫码窗口完成登录。");
+      }
+      return profile;
+    }
+    async confirmLogin() {
+      const session = await this.session();
+      const profile = await this.profile(session);
+      if (profile.usertype === undefined || !Number.isFinite(Number(profile.usertype))) {
         throw new Core.TaskError("login", "网站尚未确认登录，请在扫码窗口完成登录。");
       }
       if (this.getIdentity()?.unionid !== session.identity.unionid) {
@@ -73,9 +79,21 @@ var WorldlibSite = (() => {
           srctype: "", status: "", bgtime: "", endtime: "", fromsource: "",
           isread: "2", timeorder: "2", ishistory });
         const body = await this.request("POST", BASE + "/tools/submit_ajax.ashx?action=getpersondoc_new", params.toString());
+        const text = typeof body === "string" ? body.replace(/^\uFEFF/, "") : body;
         let data;
-        try { data = typeof body === "string" ? JSON.parse(body.replace(/^\uFEFF/, "")) : body; }
-        catch (_) { throw new Core.TaskError("protocol", "文献管理结果不是有效 JSON，已暂停处理，避免重复提交。"); }
+        if (typeof text === "string" && text.trim() === "") {
+          // The site answers an empty 文献管理 list with an empty body; its own page
+          // renders that as 暂无数据. Accept the reading only when the account is still
+          // recognised, so an unknown or stale uid cannot look like "no records" and
+          // unlock a fresh submission.
+          let verified = false;
+          try { verified = Number((await this.profile(session)).status) === 1; } catch (_) { verified = false; }
+          if (!verified) throw new Core.TaskError("protocol", "文献管理结果为空且账号状态无法确认，已暂停处理，避免重复提交。");
+          data = [];
+        } else {
+          try { data = typeof text === "string" ? JSON.parse(text) : text; }
+          catch (_) { throw new Core.TaskError("protocol", "文献管理结果不是有效 JSON，已暂停处理，避免重复提交。"); }
+        }
         if (!Array.isArray(data)) throw new Core.TaskError("protocol", "文献管理结果格式发生变化，已暂停处理。");
         for (const raw of data) {
           if (!raw || typeof raw !== "object" || !raw.id || typeof raw.title !== "string"
@@ -156,11 +174,19 @@ var WorldlibSite = (() => {
     }
     async prepare(session) {
       await this.call("checkP", session, {}, "GET");
-      const usertype = Number(session.identity.usertype);
+      let usertype = Number(session.identity.usertype);
+      let remainday = Number(session.identity.remainday);
+      if (!Number.isFinite(usertype)) {
+        // The site sets usertype/remainday only from its own page script, as session
+        // cookies, so they are lost when Zotero restarts. Ask the profile endpoint
+        // instead of reporting a permission problem the account does not have.
+        const profile = await this.profile(session);
+        usertype = Number(profile.usertype); remainday = Number(profile.remainday);
+      }
       if (!Number.isFinite(usertype) || usertype < 3 || [4, 16, 20, 512].includes(usertype)) {
         throw new Core.TaskError("permission", "当前网站账号未开通文献咨询或正在审核，请到网站处理。");
       }
-      if ([32, 36, 64, 128].includes(usertype) && !(Number(session.identity.remainday) >= 1)) {
+      if ([32, 36, 64, 128].includes(usertype) && !(remainday >= 1)) {
         throw new Core.TaskError("permission", "网站身份认证已到期，请到网站重新认证。");
       }
     }

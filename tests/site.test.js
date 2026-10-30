@@ -219,3 +219,70 @@ test('a previously waiting task completes without resubmission using the result 
   assert.equal(attached,1);
   assert.equal(job.state,'done');
 });
+
+function emptyListClient(profile) {
+  const calls = [];
+  const client = new Client({ getIdentity: () => identity, request: async (method, url, body) => {
+    calls.push({ method, url, body });
+    if (url.includes('getpersondoc_new')) return '';
+    if (url.includes('user_getwxid')) return typeof profile === 'string' ? profile : JSON.stringify(profile);
+    return JSON.stringify({ status: 0, data: [] });
+  }});
+  return { client, calls };
+}
+const profileRow = extra => ({ status: 1, userid: '123456', usertype: 64, remainday: 47, ...extra });
+
+test('an empty 文献管理 list is no data, not a protocol failure, when the account still resolves', async () => {
+  const { client, calls } = emptyListClient(profileRow());
+  const result = await client.history(session);
+  assert.equal(result.complete, true);
+  assert.deepEqual(result.records, []);
+  assert.equal(calls.filter(c => c.url.includes('getpersondoc_new')).length, 1);
+  assert.equal(calls.filter(c => c.url.includes('user_getwxid')).length, 1);
+});
+
+test('an empty list with an unresolvable account stays a protocol failure and never submits', async () => {
+  for (const profile of [profileRow({ status: 0 }), profileRow({ userid: '' }), '<html>登录</html>', '']) {
+    const { client } = emptyListClient(profile);
+    await assert.rejects(client.history(session), e => e.code === 'protocol');
+  }
+});
+
+test('an empty list still lets an already submitted job be reconciled from history', async () => {
+  const calls = [];
+  const client = new Client({ getIdentity: () => identity, request: async (method, url, body) => {
+    calls.push(body);
+    if (url.includes('getpersondoc_new')) {
+      return new URLSearchParams(body).get('ishistory') === '0' ? '' : JSON.stringify([row()]);
+    }
+    return JSON.stringify(profileRow());
+  }});
+  const result = await client.history(session, [{ doi: row().title, remoteIDs: [], submittedAt: 1 }]);
+  assert.equal(result.complete, true);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].complete, true);
+});
+
+test('permission checks fall back to the profile endpoint when usertype cookies are gone', async () => {
+  const calls = [];
+  const client = new Client({ getIdentity: () => identity, request: async (method, url) => {
+    calls.push(url);
+    if (url.includes('checkP')) return JSON.stringify({ status: 0 });
+    return JSON.stringify(profileRow());
+  }});
+  await client.prepare(session);
+  assert.equal(calls.filter(u => u.includes('user_getwxid')).length, 1);
+});
+
+test('permission checks still refuse an expired account resolved from the profile endpoint', async () => {
+  const client = new Client({ getIdentity: () => identity, request: async (method, url) => {
+    if (url.includes('checkP')) return JSON.stringify({ status: 0 });
+    return JSON.stringify(profileRow({ remainday: 0 }));
+  }});
+  await assert.rejects(client.prepare(session), e => e.code === 'permission' && /到期/.test(e.message));
+  const unopened = new Client({ getIdentity: () => identity, request: async (method, url) => {
+    if (url.includes('checkP')) return JSON.stringify({ status: 0 });
+    return JSON.stringify(profileRow({ usertype: 4 }));
+  }});
+  await assert.rejects(unopened.prepare(session), e => e.code === 'permission' && /未开通/.test(e.message));
+});

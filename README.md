@@ -2,7 +2,7 @@
 
 在 Zotero 中通过 DOI 查询世图文献求助结果，下载 PDF，并自动添加到原文献下方。
 
-**当前版本：0.1.7 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
+**当前版本：0.1.8 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
 
 > 需要可正常使用文献咨询功能的世图账号。本插件不提供账号、订阅或网站权限，不保证每篇文献都能获取。当前版本已通过本地自动化测试，尚未完成修复后的 Zotero 实机端到端验证。
 
@@ -16,13 +16,13 @@
 
 ## 安装
 
-1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.7.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
+1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.8.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
 2. 在 Zotero 中打开 **工具 → 插件**，点击齿轮菜单，选择 **从文件安装插件**。
 3. 选择下载的 XPI；如 Zotero 提示重启，按提示操作。
 
 插件清单声明支持 **Zotero 9–10**，不代表已在所有对应版本上完成测试。当前未配置自动更新，后续版本需手动下载安装。
 
-安装或更新前，建议备份 Zotero 数据目录中的 `worldlib-pdf` 文件夹，并保留原安装包以便回退。若此前安装过同为 0.1.7 的旧包，请手动安装本仓库 Release 中重新打包的版本；本次未提升版本号。
+安装或更新前，建议备份 Zotero 数据目录中的 `worldlib-pdf` 文件夹，并保留原安装包以便回退。从 0.1.7 升级时直接覆盖安装即可，任务数据不需要删除。
 
 ## 使用
 
@@ -43,7 +43,9 @@
 
 ## 常见问题
 
-**登录成功后仍提示无权限？** 账号需要具有网站文献咨询权限；审核、到期或额度问题需到网站处理，插件不能绕过。
+**登录成功后仍提示无权限？** 账号需要具有网站文献咨询权限；审核、到期或额度问题需到网站处理，插件不能绕过。若账号在网站上显示正常，请升级到 0.1.8 及以上：旧版在 Zotero 重启后会丢失网站写入的身份类型 Cookie，从而误报无权限。
+
+**任务全部显示「需处理」且提示文献管理结果不是有效 JSON？** 0.1.7 的问题，网站「文献列表」为空时返回空响应体被当成协议错误。升级到 0.1.8 后，对已显示「需处理」的任务点「重试查询 / 下载」即可继续；这些任务此前并未提交，不会产生重复需求。
 
 **为什么显示完成但没有下载？** 网站下载链接可能已失效、时间无法核实，或下载主机不在允许名单中。插件不会自动使用无法验证有效期的本地缓存，请打开网站核对。
 
@@ -72,8 +74,8 @@ python3 scripts/build.py
 脚本读取 `manifest.json` 中的版本号，仅打包 `bootstrap.js`、`manifest.json`、`src/` 和 `chrome/`，生成：
 
 ```text
-dist/worldlib-pdf-0.1.7.xpi
-dist/worldlib-pdf-0.1.7.xpi.sha256
+dist/worldlib-pdf-0.1.8.xpi
+dist/worldlib-pdf-0.1.8.xpi.sha256
 ```
 
 产物不会包含测试文件、Git 历史、任务数据或本机路径。相同输入生成相同字节的安装包；输出文件已存在时拒绝覆盖。
