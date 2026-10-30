@@ -286,3 +286,24 @@ test('permission checks still refuse an expired account resolved from the profil
   }});
   await assert.rejects(unopened.prepare(session), e => e.code === 'permission' && /未开通/.test(e.message));
 });
+
+test('landing page http links to a public address are accepted, private ones are not', async () => {
+  const client = new Client({ request: async () => '<html></html>' });
+  const anchor = href => ({ textContent: '文件下载', getAttribute: () => href });
+  const page = links => () => ({ querySelectorAll: () => links.map(anchor) });
+  const source = 'https://research.worldlib.site/tools/submit_ajax.ashx?action=getdownfile&path=/a.pdf';
+  const public1 = 'http://203.0.113.10:8123/UPLOAD/202610/30/example.PDF?token=abc';
+  assert.deepEqual(await client.downloadLinks(source, page([public1])), [public1]);
+  for (const bad of ['http://127.0.0.1/a.pdf', 'http://10.0.0.5:8123/a.pdf', 'http://192.168.1.9/a.pdf',
+    'http://169.254.1.1/a.pdf', 'http://172.20.0.1/a.pdf', 'http://100.64.0.1/a.pdf',
+    'http://999.1.1.1/a.pdf', 'http://user:pw@203.0.113.10:8123/a.pdf', 'ftp://203.0.113.10/a.pdf']) {
+    await assert.rejects(client.downloadLinks(source, page([bad])), e => e.code === 'invalid_pdf');
+  }
+});
+
+test('a raw http address is still rejected before the landing page is resolved', async () => {
+  assert.equal(Core.isLandingDownloadURL('http://203.0.113.10:8123/UPLOAD/a.PDF'), true);
+  assert.equal(Core.isSafeDownloadURL('http://203.0.113.10:8123/UPLOAD/a.PDF'), false);
+  const { client } = setup([row({ url: 'http://203.0.113.10:8123/UPLOAD/a.PDF' })]);
+  assert.deepEqual((await client.results(session))[0].links, []);
+});

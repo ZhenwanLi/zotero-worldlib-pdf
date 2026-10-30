@@ -203,7 +203,7 @@ var WorldlibRuntime = class {
           });
           for (const link of links) {
             if (!stillActive()) return { cancelled: true };
-            if (!WorldlibCore.isSafeDownloadURL(link)) continue;
+            if (!WorldlibCore.isLandingDownloadURL(link)) continue;
             let cancel;
             try {
               await Zotero.HTTP.download(link, file, {

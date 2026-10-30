@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "世图 PDF 助手",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "通过世图提交 DOI、等待结果并将 PDF 添加到原文献。",
   "author": "Worldlib PDF Helper contributors",
   "icons": {

@@ -28,6 +28,30 @@ var WorldlibCore = (() => {
         && ["research.worldlib.site", "reseach1.worldlib.site", "npc1.worldlib.site"].includes(url.hostname);
     } catch (_) { return false; }
   }
+  function isPublicIPv4(host) {
+    const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(host || ""));
+    if (!match) return false;
+    const parts = match.slice(1).map(Number);
+    if (parts.some(n => n > 255)) return false;
+    const [a, b] = parts;
+    // Loopback, private, link-local and carrier-grade NAT ranges are never a
+    // legitimate download host and would let the site reach this machine's LAN.
+    return !(a === 0 || a === 10 || a === 127
+      || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127));
+  }
+  function isLandingDownloadURL(value) {
+    // The site now hands out http://<public ip>:<port>/UPLOAD/...?token=... links
+    // from its own getdownfile landing page. Those are accepted only for links
+    // extracted from that page, still without credentials, and only for public
+    // addresses; the file itself is checked for a PDF header and trailer.
+    if (isSafeDownloadURL(value)) return true;
+    try {
+      const url = new URL(value);
+      if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return false;
+      return isPublicIPv4(url.hostname);
+    } catch (_) { return false; }
+  }
   function persistentState(value) {
     const state = copy(value);
     // URLs may carry raw account IDs or signatures. Never serialize them,
@@ -348,6 +372,6 @@ var WorldlibCore = (() => {
       await this.saveTail.catch(() => {});
     }
   }
-  return { TaskError, normalizeDOI, extractDOIs, parseLinks, isSafeDownloadURL, persistentState, parseRecord, matchRecord, isPDF, Engine, active };
+  return { TaskError, normalizeDOI, extractDOIs, parseLinks, isSafeDownloadURL, isLandingDownloadURL, persistentState, parseRecord, matchRecord, isPDF, Engine, active };
 })();
 if (typeof module !== "undefined") module.exports = WorldlibCore;

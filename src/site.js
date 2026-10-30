@@ -218,7 +218,7 @@ var WorldlibSite = (() => {
         try { links.push(new URL(anchor.getAttribute("href"), url).href); }
         catch (_) { /* Invalid links are never passed to the downloader. */ }
       }
-      const valid = Core.parseLinks(links).filter(link => link !== url && Core.isSafeDownloadURL(link));
+      const valid = Core.parseLinks(links).filter(link => link !== url && Core.isLandingDownloadURL(link));
       if (!valid.length) throw new Core.TaskError("invalid_pdf", "世图下载页面未提供有效的“文件下载”链接，请到网站核对。");
       return valid;
     }

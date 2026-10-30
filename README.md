@@ -2,7 +2,7 @@
 
 在 Zotero 中通过 DOI 查询世图文献求助结果，下载 PDF，并自动添加到原文献下方。
 
-**当前版本：0.1.8 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
+**当前版本：0.1.9 · 测试版** · [下载安装包](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases/latest) · [版本记录](CHANGELOG.md)
 
 > 需要可正常使用文献咨询功能的世图账号。本插件不提供账号、订阅或网站权限，不保证每篇文献都能获取。当前版本已通过本地自动化测试，尚未完成修复后的 Zotero 实机端到端验证。
 
@@ -16,7 +16,7 @@
 
 ## 安装
 
-1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.8.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
+1. 打开 [Releases](https://github.com/ZhenwanLi/zotero-worldlib-pdf/releases)，下载 **`worldlib-pdf-0.1.9.xpi`**，不要下载 GitHub 自动生成的 Source code 压缩包。
 2. 在 Zotero 中打开 **工具 → 插件**，点击齿轮菜单，选择 **从文件安装插件**。
 3. 选择下载的 XPI；如 Zotero 提示重启，按提示操作。
 
@@ -49,6 +49,8 @@
 
 **为什么显示完成但没有下载？** 网站下载链接可能已失效、时间无法核实，或下载主机不在允许名单中。插件不会自动使用无法验证有效期的本地缓存，请打开网站核对。
 
+**显示「应助完成」但报「所有下载地址均失败」？** 网站已把下载主机从 `https://npc1.worldlib.site` 换成 `http://<公网 IP>:<端口>/UPLOAD/...` 的明文链接，0.1.8 及更早版本的主机白名单会把它全部过滤掉。0.1.9 起允许从世图下载落地页提取的此类公网地址（仍拒绝环回与私有网段，仍校验 PDF 头与结束标记）；升级后对失败任务点「重试查询 / 下载」即可。
+
 **为什么不自动重新提交？** 防止网络异常或旧任务未显示时重复占用额度。确认网站确实没有对应需求后，才使用“重新提交所选需求”。
 
 **如何回退？** 从插件管理器安装事先备份的旧版 XPI。不要为了回退删除任务数据或文献附件。
@@ -58,7 +60,7 @@
 - 登录信息由 Zotero 使用的 Cookie 存储保存；插件会将相关会话 Cookie 延长保存至最多 30 天。
 - 任务数据位于 **Zotero 数据目录 / `worldlib-pdf`**，包含标题、DOI、条目标识、账号指纹和任务状态。请勿将任务文件、备份或 Cookie 上传到仓库或公开 issue。
 - 当前代码不将下载链接写入任务快照，新生成的备份也会过滤链接；已有旧备份仍可能含历史账号参数，不会被自动删除。
-- 自动下载入口与页面提取链接仅接受明确允许的 HTTPS 主机和默认端口；底层下载器的重定向防护仍未完整验证。
+- 自动下载入口仅接受世图自己的 HTTPS 域名；由世图下载落地页提取的链接另外允许明文 HTTP 的公网 IP 地址（拒绝环回、私有、链路本地与运营商级 NAT 网段），文件仍校验 PDF 头与结束标记。底层下载器的重定向防护仍未完整验证。
 - PDF 文件头与结束标记检查不等于文件安全扫描，也不验证文件内容是否确实对应目标文献。
 - 反馈问题前请移除账号、带参数的下载链接、Cookie、个人路径及不希望公开的文献使用记录。
 
@@ -74,8 +76,8 @@ python3 scripts/build.py
 脚本读取 `manifest.json` 中的版本号，仅打包 `bootstrap.js`、`manifest.json`、`src/` 和 `chrome/`，生成：
 
 ```text
-dist/worldlib-pdf-0.1.8.xpi
-dist/worldlib-pdf-0.1.8.xpi.sha256
+dist/worldlib-pdf-0.1.9.xpi
+dist/worldlib-pdf-0.1.9.xpi.sha256
 ```
 
 产物不会包含测试文件、Git 历史、任务数据或本机路径。相同输入生成相同字节的安装包；输出文件已存在时拒绝覆盖。
